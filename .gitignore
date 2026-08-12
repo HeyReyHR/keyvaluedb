@@ -1,0 +1,9 @@
+# .gitignore
+/bin/
+/vendor/
+*.exe
+*.test
+*.out
+.idea/
+.vscode/
+*.log
