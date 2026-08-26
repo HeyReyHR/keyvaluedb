@@ -1,19 +1,19 @@
-package internal
+package database
 
 import (
 	"io"
 	"log/slog"
 	"testing"
 
-	"github.com/HeyReyHR/keyvaluedb/internal/compute/parser"
-	"github.com/HeyReyHR/keyvaluedb/internal/storage"
+	parser2 "github.com/HeyReyHR/keyvaluedb/internal/database/compute/parser"
+	"github.com/HeyReyHR/keyvaluedb/internal/database/storage"
 )
 
 type mockParser struct {
-	parseFunc func(string) (parser.Query, error)
+	parseFunc func(string) (parser2.Query, error)
 }
 
-func (m *mockParser) Parse(input string) (parser.Query, error) {
+func (m *mockParser) Parse(input string) (parser2.Query, error) {
 	return m.parseFunc(input)
 }
 
@@ -74,7 +74,7 @@ func TestDatabase_HandleQuery(t *testing.T) {
 	tests := []struct {
 		name       string
 		input      string
-		parseFunc  func(string) (parser.Query, error)
+		parseFunc  func(string) (parser2.Query, error)
 		setFunc    func(key, value string) error
 		getFunc    func(key string) (string, error)
 		delFunc    func(key string) error
@@ -83,16 +83,16 @@ func TestDatabase_HandleQuery(t *testing.T) {
 		{
 			name:  "parse error",
 			input: "KEK",
-			parseFunc: func(string) (parser.Query, error) {
-				return parser.Query{}, parser.ErrInvalidCommand
+			parseFunc: func(string) (parser2.Query, error) {
+				return parser2.Query{}, parser2.ErrInvalidCommand
 			},
 			wantOutput: "[error] invalid command",
 		},
 		{
 			name:  "GET found",
 			input: "GET key1",
-			parseFunc: func(string) (parser.Query, error) {
-				return parser.NewQuery(parser.GetCommandId, []string{"key1"}), nil
+			parseFunc: func(string) (parser2.Query, error) {
+				return parser2.NewQuery(parser2.GetCommandId, []string{"key1"}), nil
 			},
 			getFunc: func(key string) (string, error) {
 				return "value1", nil
@@ -102,8 +102,8 @@ func TestDatabase_HandleQuery(t *testing.T) {
 		{
 			name:  "GET not found",
 			input: "GET missing",
-			parseFunc: func(string) (parser.Query, error) {
-				return parser.NewQuery(parser.GetCommandId, []string{"missing"}), nil
+			parseFunc: func(string) (parser2.Query, error) {
+				return parser2.NewQuery(parser2.GetCommandId, []string{"missing"}), nil
 			},
 			getFunc: func(key string) (string, error) {
 				return "", storage.ErrNotFound
@@ -113,8 +113,8 @@ func TestDatabase_HandleQuery(t *testing.T) {
 		{
 			name:  "SET ok",
 			input: "SET key1 value1",
-			parseFunc: func(string) (parser.Query, error) {
-				return parser.NewQuery(parser.SetCommandId, []string{"key1", "value1"}), nil
+			parseFunc: func(string) (parser2.Query, error) {
+				return parser2.NewQuery(parser2.SetCommandId, []string{"key1", "value1"}), nil
 			},
 			setFunc: func(key, value string) error {
 				return nil
@@ -124,8 +124,8 @@ func TestDatabase_HandleQuery(t *testing.T) {
 		{
 			name:  "DEL ok",
 			input: "DEL key1",
-			parseFunc: func(string) (parser.Query, error) {
-				return parser.NewQuery(parser.DelCommandId, []string{"key1"}), nil
+			parseFunc: func(string) (parser2.Query, error) {
+				return parser2.NewQuery(parser2.DelCommandId, []string{"key1"}), nil
 			},
 			delFunc: func(key string) error {
 				return nil
@@ -135,8 +135,8 @@ func TestDatabase_HandleQuery(t *testing.T) {
 		{
 			name:  "unknown command id",
 			input: "???",
-			parseFunc: func(string) (parser.Query, error) {
-				return parser.NewQuery(999, nil), nil
+			parseFunc: func(string) (parser2.Query, error) {
+				return parser2.NewQuery(999, nil), nil
 			},
 			wantOutput: "[error] internal error",
 		},
