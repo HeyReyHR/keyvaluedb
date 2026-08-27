@@ -1,16 +1,16 @@
-package internal
+package database
 
 import (
 	"errors"
 	"fmt"
 	"log/slog"
 
-	"github.com/HeyReyHR/keyvaluedb/internal/compute/parser"
-	"github.com/HeyReyHR/keyvaluedb/internal/storage"
+	parser2 "github.com/HeyReyHR/keyvaluedb/internal/database/compute/parser"
+	"github.com/HeyReyHR/keyvaluedb/internal/database/storage"
 )
 
 type computeLayer interface {
-	Parse(string) (parser.Query, error)
+	Parse(string) (parser2.Query, error)
 }
 
 type storageLayer interface {
@@ -51,47 +51,47 @@ func (d *Database) HandleQuery(input string) string {
 	}
 
 	switch query.CommandId() {
-	case parser.GetCommandId:
+	case parser2.GetCommandId:
 		return d.handleGetQuery(query)
-	case parser.DelCommandId:
+	case parser2.DelCommandId:
 		return d.handleDelQuery(query)
-	case parser.SetCommandId:
+	case parser2.SetCommandId:
 		return d.handleSetQuery(query)
 	default:
 		d.logger.Error("compute layer is incorrect", slog.Int("command_id", query.CommandId()))
-		return "[error] internal error"
+		return "ERROR internal error"
 	}
 }
 
-func (d *Database) handleGetQuery(query parser.Query) string {
+func (d *Database) handleGetQuery(query parser2.Query) string {
 	args := query.Arguments()
 	value, err := d.storageLayer.Get(args[0])
 	if err != nil {
 		if errors.Is(err, storage.ErrNotFound) {
-			return fmt.Sprintf("[not found]")
+			return fmt.Sprintf("NOT FOUND")
 		}
-		return fmt.Sprintf("[error] %s", err)
+		return fmt.Sprintf("ERROR %s", err)
 	}
 
-	return fmt.Sprintf("[ok] %s", value)
+	return fmt.Sprintf("OK %s", value)
 }
 
-func (d *Database) handleSetQuery(query parser.Query) string {
+func (d *Database) handleSetQuery(query parser2.Query) string {
 	args := query.Arguments()
 
 	if err := d.storageLayer.Set(args[0], args[1]); err != nil {
-		return fmt.Sprintf("[error] %s", err)
+		return fmt.Sprintf("ERROR %s", err)
 	}
 
-	return fmt.Sprintf("[ok]")
+	return fmt.Sprintf("OK")
 }
 
-func (d *Database) handleDelQuery(query parser.Query) string {
+func (d *Database) handleDelQuery(query parser2.Query) string {
 	args := query.Arguments()
 
 	if err := d.storageLayer.Del(args[0]); err != nil {
-		return fmt.Sprintf("[error] %s", err)
+		return fmt.Sprintf("ERROR %s", err)
 	}
 
-	return fmt.Sprintf("[ok]")
+	return fmt.Sprintf("OK")
 }
